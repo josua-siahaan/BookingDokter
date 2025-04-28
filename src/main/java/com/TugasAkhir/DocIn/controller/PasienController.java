@@ -2,8 +2,8 @@ package com.TugasAkhir.DocIn.controller;
 
 import com.TugasAkhir.DocIn.config.OtherConfig;
 import com.TugasAkhir.DocIn.dto.validation.ValDokterDTO;
-import com.TugasAkhir.DocIn.model.Dokter;
-import com.TugasAkhir.DocIn.service.DokterService;
+import com.TugasAkhir.DocIn.dto.validation.ValPasienDTO;
+import com.TugasAkhir.DocIn.service.PasienService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,36 +13,36 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/dokter")
-public class DokterController {
+@RequestMapping("/pasien")
+public class PasienController {
+
     @Autowired
-    private DokterService dokterService;
+    private PasienService pasienService;
+
 
     @PostMapping
-    public ResponseEntity<Object> save(@Valid @RequestBody ValDokterDTO valDokterDTO, HttpServletRequest request){
-        return dokterService.save(dokterService.convertToEntity(valDokterDTO), request);
+    public ResponseEntity<Object> save(@Valid @RequestBody ValPasienDTO valPasienDTO, HttpServletRequest request){
+        return pasienService.save(pasienService.convertToEntity(valPasienDTO), request);
     }
 
     @GetMapping
     public ResponseEntity<Object> findAll(HttpServletRequest request){
         Pageable pageable = PageRequest.of(0, OtherConfig.getPageDefault(), Sort.by("id"));
-        return dokterService.findAll(pageable, request);
+        return pasienService.findAll(pageable, request);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Object> update(
             @PathVariable(value = "id") Long id,
-            @Valid @RequestBody ValDokterDTO valDokterDTO, HttpServletRequest request
+            @Valid @RequestBody ValPasienDTO valPasienDTO, HttpServletRequest request
     ){
-        return dokterService.update(id, dokterService.convertToEntity(valDokterDTO), request);
+        return pasienService.update(id, pasienService.convertToEntity(valPasienDTO), request);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<Object> delate(@PathVariable(value = "id") Long id, HttpServletRequest request){
-        return dokterService.delete(id, request);
+        return pasienService.delete(id, request);
     }
 
     @GetMapping("/{sort}/{sortBy}/{page}")
@@ -60,7 +60,7 @@ public class DokterController {
             case "asc": pageable = PageRequest.of(page, size, Sort.by(sortBy)); break;
             default: pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
         }
-        return dokterService.findByParam(pageable, column, value, request);
+        return pasienService.findByParam(pageable, column, value, request);
     }
 
     private String sortColumnByMap(String sortBy){

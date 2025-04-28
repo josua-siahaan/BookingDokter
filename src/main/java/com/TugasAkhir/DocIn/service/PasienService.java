@@ -3,16 +3,19 @@ package com.TugasAkhir.DocIn.service;
 import com.TugasAkhir.DocIn.config.OtherConfig;
 import com.TugasAkhir.DocIn.core.IService;
 import com.TugasAkhir.DocIn.dto.response.RespDokterDTO;
+import com.TugasAkhir.DocIn.dto.response.RespPasienDTO;
 import com.TugasAkhir.DocIn.dto.validation.ValDokterDTO;
+import com.TugasAkhir.DocIn.dto.validation.ValPasienDTO;
 import com.TugasAkhir.DocIn.handler.GlobalResponse;
 import com.TugasAkhir.DocIn.handler.ResponseHandler;
 import com.TugasAkhir.DocIn.model.Dokter;
-import com.TugasAkhir.DocIn.repo.DokterRepo;
+import com.TugasAkhir.DocIn.model.Pasien;
+import com.TugasAkhir.DocIn.repo.PasienRepo;
 import com.TugasAkhir.DocIn.security.RequestCapture;
 import com.TugasAkhir.DocIn.util.LoggingFile;
 import com.TugasAkhir.DocIn.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
+import jakarta.transaction.TransactionScoped;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,11 +29,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
-public class DokterService implements IService<Dokter> {
+@TransactionScoped
+public class PasienService implements IService<Pasien> {
 
     @Autowired
-    private DokterRepo dokterRepo;
+    private PasienRepo pasienRepo;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -38,16 +41,17 @@ public class DokterService implements IService<Dokter> {
     @Autowired
     private TransformPagination transformPagination;
 
+
     @Override
-    public ResponseEntity<Object> save(Dokter dokter, HttpServletRequest request) {
-        if (dokter == null){
+    public ResponseEntity<Object> save(Pasien pasien, HttpServletRequest request) {
+        if (pasien == null){
             return ResponseEntity.badRequest().body("Data yang di isi kosong -- USM01FV0001");
         }
         try {
-            dokterRepo.save(dokter);
+            pasienRepo.save(pasien);
         } catch (Exception e) {
-            LoggingFile.print(dokter.getNama(), OtherConfig.getEnablePrint());
-            LoggingFile.logException("DokterService", "save(Dokter dokter, HttpServletRequest request)--Line 31"+
+            LoggingFile.print(pasien.getNama(), OtherConfig.getEnablePrint());
+            LoggingFile.logException("PasienService", "save(Pasien pasien, HttpServletRequest request)--Line 38"+
                     RequestCapture.allRequest(request), e, OtherConfig.getEnableLog());
             return GlobalResponse.dataGagalDisimpan("USM01FE001", request);
 //            return ResponseEntity.badRequest().body("Data Gagal Di Simpan");
@@ -57,23 +61,23 @@ public class DokterService implements IService<Dokter> {
     }
 
     @Override
-    public ResponseEntity<Object> update(Long id, Dokter dokter, HttpServletRequest request) {
-        if (dokter == null){
+    public ResponseEntity<Object> update(Long id, Pasien pasien, HttpServletRequest request) {
+        if (pasien == null){
             return ResponseEntity.badRequest().body("Data yang di isi kosong -- USM01FV0011");
         }
         try {
-            Optional<Dokter> optionalDokter = dokterRepo.findById(id);
-            if (!optionalDokter.isPresent()){
+            Optional<Pasien> optionalPasien = pasienRepo.findById(id);
+            if (!optionalPasien.isPresent()){
                 return ResponseEntity.badRequest().body("Data dengan id " + id + " tidak di temukan -- USM01FV012");
             }
-            Dokter nextDokter = optionalDokter.get();
-            nextDokter.setNama(dokter.getNama());
-            nextDokter.setAlamat(dokter.getAlamat());
-            nextDokter.setEmail(dokter.getEmail());
-            nextDokter.setNoHp(dokter.getNoHp());
+            Pasien nextPasien = optionalPasien.get();
+            nextPasien.setNama(pasien.getNama());
+            nextPasien.setAlamat(pasien.getAlamat());
+            nextPasien.setEmail(pasien.getEmail());
+            nextPasien.setNoHp(pasien.getNoHp());
         } catch (Exception e) {
-            LoggingFile.print(dokter.getNama(), OtherConfig.getEnablePrint());
-            LoggingFile.logException("DokterService", "update(Long id, Dokter dokter, HttpServletRequest request)--Line 59"+
+            LoggingFile.print(pasien.getNama(), OtherConfig.getEnablePrint());
+            LoggingFile.logException("DokterService", "update(Long id, Pasien pasien, HttpServletRequest request)--Line 65"+
                     RequestCapture.allRequest(request), e, OtherConfig.getEnableLog());
             return GlobalResponse.dataGagalDiubah("USM01FE001", request);
 //            return ResponseEntity.badRequest().body("Data Gagal Di Perbaharui");
@@ -85,12 +89,12 @@ public class DokterService implements IService<Dokter> {
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {
         try {
-            Optional<Dokter> optionalDokter = dokterRepo.findById(id);
-            if (!optionalDokter.isPresent()){
-                return ResponseEntity.badRequest().body("Dokter dengan id " + id + " tidak terdaftar!!");
+            Optional<Pasien> optionalPasien = pasienRepo.findById(id);
+            if (!optionalPasien.isPresent()){
+                return ResponseEntity.badRequest().body("Pasien dengan id " + id + " tidak terdaftar!!");
             }
-            Dokter nextDokter = optionalDokter.get();
-            dokterRepo.delete(nextDokter);
+            Pasien nextPasien = optionalPasien.get();
+            pasienRepo.delete(nextPasien);
         } catch (Exception e) {
             return GlobalResponse.dataGagalDihapus("USM01FV021", request);
 //            return ResponseEntity.badRequest().body("Data Gagal Di Hapus" + request);
@@ -101,58 +105,55 @@ public class DokterService implements IService<Dokter> {
 
     @Override
     public ResponseEntity<Object> findAll(Pageable pageable, HttpServletRequest request) {
-        Page<Dokter> page = null;
-        List<Dokter> list = null;
+        Page<Pasien> page = null;
+        List<Pasien> list = null;
 
-        page = dokterRepo.findAll(pageable);
+        page = pasienRepo.findAll(pageable);
         list = page.getContent();
-        List<RespDokterDTO> respDokterDTOList = convertToRespDokterDTO(list);
+        List<RespPasienDTO> respPasienDTOList = convertToRespPasienDTO(list);
 
-        return GlobalResponse.dataDitemukan(transformPagination.transformPagination(respDokterDTOList, page,null, null), request);
-//        return new ResponseHandler().handleResponse("Data Ditemukan", HttpStatus.OK, respDokterDTOList, null, request);
-//        return ResponseEntity.status(HttpStatus.OK).body(transformPagination.transformPagination(respDokterDTOList, page, null, null)+ "\n"+request);
+        return GlobalResponse.dataDitemukan(transformPagination.transformPagination(respPasienDTOList, page,null, null), request);
+//        return new ResponseHandler().handleResponse("Data Ditemukan", HttpStatus.OK, respPasienDTOList, null, request);
     }
 
     @Override
     public ResponseEntity<Object> findById(Long id, HttpServletRequest request) {
-        Optional<Dokter> optionalDokter =null;
+        Optional<Pasien> optionalPasien =null;
         try {
-            optionalDokter = dokterRepo.findById(id);
-            if (!optionalDokter.isPresent()){
+            optionalPasien = pasienRepo.findById(id);
+            if (!optionalPasien.isPresent()){
                 return ResponseEntity.badRequest().body("Data dengan id " + id + " tidak ditemukan");
             }
         } catch (Exception e) {
             return GlobalResponse.terjadiKesalahan("USM01FE041", request);
         }
-        Dokter nextDokter = optionalDokter.get();
-        return GlobalResponse.dataDitemukan(optionalDokter,request);
+        Pasien nextPasien = optionalPasien.get();
+        return GlobalResponse.dataDitemukan(optionalPasien,request);
+//        return ResponseEntity.ok("Data ditemukan!!\n" + nextPasien + " \n" + request);
     }
 
     @Override
     public ResponseEntity<Object> findByParam(Pageable pageable, String columnName, String value, HttpServletRequest request) {
-        Page<Dokter> page = null;
-        List<Dokter> list = null;
+        Page<Pasien> page = null;
+        List<Pasien> list = null;
 
         switch (columnName){
-            case "nama": page = dokterRepo.findByNamaContainsIgnoreCase(value, pageable); break;
-            case "jabatan": page = dokterRepo.findByJabatanContainsIgnoreCase(value, pageable); break;
-            default: page = dokterRepo.findAll(pageable);
+            case "nama": page = pasienRepo.findByNamaContainsIgnoreCase(value, pageable); break;
+            case "alamat": page = pasienRepo.findByAlamatContainsIgnoreCase(value, pageable); break;
+            default: page = pasienRepo.findAll(pageable);
         }
         list = page.getContent();
-        List<RespDokterDTO> lt = convertToRespDokterDTO(list);
+        List<RespPasienDTO> lt = convertToRespPasienDTO(list);
         return GlobalResponse.dataDitemukan(transformPagination.transformPagination(lt, page, columnName, value),request);
-//        return new ResponseHandler().handleResponse("Data ditemukan", HttpStatus.OK, lt, null, request);
-
     }
 
-
-    public List<RespDokterDTO> convertToRespDokterDTO(List<Dokter> dokters){
-        List<RespDokterDTO> respDokterDTOList = modelMapper.map(dokters, new TypeToken<List<RespDokterDTO>>(){}.getType());
-        return respDokterDTOList;
+    public List<RespPasienDTO> convertToRespPasienDTO(List<Pasien> pasiens){
+        List<RespPasienDTO> respPasienDTOList = modelMapper.map(pasiens, new TypeToken<List<RespPasienDTO>>(){}.getType());
+        return respPasienDTOList;
     }
 
-    public Dokter convertToEntity(ValDokterDTO valDokterDTO){
-        Dokter dokter = modelMapper.map(valDokterDTO, Dokter.class);
-        return dokter;
+    public Pasien convertToEntity(ValPasienDTO valPasienDTODTO){
+        Pasien pasien = modelMapper.map(valPasienDTODTO, Pasien.class);
+        return pasien;
     }
 }
